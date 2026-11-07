@@ -28,6 +28,9 @@ export default class FacilityPanel {
     if (this.container) return;
 
     const panel = scene.add.container(500, 325);
+    // Assign the panel immediately so facility controls
+    // can safely reference it during initialization.
+    this.container = panel;
     panel.setDepth(1000);
     
     // Keep the facility console fixed to the screen.
@@ -232,7 +235,6 @@ export default class FacilityPanel {
       this.close();
     });
 
-    this.container = panel;
   }
 
  
@@ -375,6 +377,7 @@ createOperationButton(facility, callbacks) {
 // OXYGEN GENERATOR EMERGENCY REPAIR BUTTON
 // ==========================================
 
+
 createOxygenRepairButton(callbacks) {
 
   this.statusText.setText(
@@ -385,21 +388,13 @@ createOxygenRepairButton(callbacks) {
   this.statusText.setColor('#ff7777');
 
   this.oxygenRepairButton = this.scene.add.rectangle(
-    0,
-    130,
-    280,
-    40,
-    0x9c3434
+    0, 130, 280, 40, 0x9c3434
   );
 
-  this.oxygenRepairButton.setStrokeStyle(
-    2,
-    0xff9999
-  );
+  this.oxygenRepairButton.setStrokeStyle(2, 0xff9999);
 
   this.oxygenRepairLabel = this.scene.add.text(
-    0,
-    130,
+    0, 130,
     'INITIATE EMERGENCY REPAIR',
     {
       fontFamily: 'monospace',
@@ -413,37 +408,35 @@ createOxygenRepairButton(callbacks) {
     useHandCursor: true
   });
 
-  this.oxygenRepairButton.on('pointerdown', () => {
+  // Shared action for mouse click and ENTER key.
+  this.startOxygenRepairAction = () => {
+
+    if (this.oxygenRepairStarting) return;
 
     if (
-      this.oxygenRepairStarting ||
-      !this.container
+      typeof callbacks.onRepairOxygenGenerator !== 'function'
     ) {
+      console.error('Oxygen repair callback is missing.');
+      this.statusText.setText('REPAIR CALLBACK NOT CONNECTED.');
       return;
     }
 
-    if (!callbacks.onRepairOxygenGenerator) {
-      return;
-    }
+    console.log('[ASTROQUEST] Oxygen repair action triggered.');
 
     this.oxygenRepairStarting = true;
 
     this.oxygenRepairButton.disableInteractive();
     this.oxygenRepairButton.setFillStyle(0x405363);
 
-    this.oxygenRepairLabel.setText(
-      'REPAIR PUZZLE LOADING...'
-    );
+    this.oxygenRepairLabel.setText('LOADING REPAIR PUZZLE...');
 
     this.statusText.setText(
-      'INITIALIZING EMERGENCY REPAIR SEQUENCE...'
+      'INITIALIZING OXYGEN GENERATOR REPAIR...'
     );
-
-    this.statusText.setColor('#7dd3fc');
 
     const started = callbacks.onRepairOxygenGenerator(
 
-      result => {
+      (result) => {
 
         this.oxygenRepairStarting = false;
 
@@ -452,32 +445,23 @@ createOxygenRepairButton(callbacks) {
           this.statusText.setText(result.message);
           this.statusText.setColor('#8dffb0');
 
-          this.oxygenRepairButton.disableInteractive();
+          this.oxygenRepairLabel.setText('GENERATOR RESTORED');
           this.oxygenRepairButton.setFillStyle(0x16875c);
-
-          this.oxygenRepairLabel.setText(
-            'GENERATOR RESTORED'
-          );
 
         } else {
 
           this.statusText.setText(
-            result
-              ? result.message
-              : 'OXYGEN GENERATOR REPAIR FAILED.'
+            result?.message || 'REPAIR FAILED. TRY AGAIN.'
           );
 
           this.statusText.setColor('#ff7777');
 
+          this.oxygenRepairLabel.setText('RETRY EMERGENCY REPAIR');
           this.oxygenRepairButton.setFillStyle(0x9c3434);
 
           this.oxygenRepairButton.setInteractive({
             useHandCursor: true
           });
-
-          this.oxygenRepairLabel.setText(
-            'RETRY EMERGENCY REPAIR'
-          );
         }
       },
 
@@ -491,15 +475,12 @@ createOxygenRepairButton(callbacks) {
 
         this.statusText.setColor('#ffcc80');
 
+        this.oxygenRepairLabel.setText('RETRY EMERGENCY REPAIR');
         this.oxygenRepairButton.setFillStyle(0x9c3434);
 
         this.oxygenRepairButton.setInteractive({
           useHandCursor: true
         });
-
-        this.oxygenRepairLabel.setText(
-          'RETRY EMERGENCY REPAIR'
-        );
       }
     );
 
@@ -508,23 +489,37 @@ createOxygenRepairButton(callbacks) {
       this.oxygenRepairStarting = false;
 
       this.statusText.setText(
-        'REPAIR UNAVAILABLE. TRY AGAIN.'
+        'UNABLE TO START REPAIR. CHECK MINI-GAME MANAGER.'
       );
 
       this.statusText.setColor('#ff7777');
 
+      this.oxygenRepairLabel.setText('RETRY EMERGENCY REPAIR');
       this.oxygenRepairButton.setFillStyle(0x9c3434);
 
       this.oxygenRepairButton.setInteractive({
         useHandCursor: true
       });
-
-      this.oxygenRepairLabel.setText(
-        'RETRY EMERGENCY REPAIR'
-      );
     }
-  });
+  };
+
+  // Mouse interaction.
+  this.oxygenRepairButton.on(
+    'pointerdown',
+    this.startOxygenRepairAction
+  );
+
+  // Keyboard fallback.
+  this.oxygenRepairEnterHandler = () => {
+    this.startOxygenRepairAction();
+  };
+
+  this.scene.input.keyboard.on(
+    'keydown-ENTER',
+    this.oxygenRepairEnterHandler
+  );
 }
+
 
 
 createCommandCenterPanel(facility, callbacks, panel) {
@@ -867,6 +862,15 @@ createCommandCenterPanel(facility, callbacks, panel) {
   }
 
   this.enterHandler = null;
+  if (this.oxygenRepairEnterHandler) {
+  this.scene.input.keyboard.off(
+    'keydown-ENTER',
+    this.oxygenRepairEnterHandler
+  );
+}
+
+this.oxygenRepairEnterHandler = null;
+this.startOxygenRepairAction = null;
   this.startMiniGameAction = null;
   this.miniGameStarting = false;
 
