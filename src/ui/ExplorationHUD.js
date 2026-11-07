@@ -1,109 +1,193 @@
-export default class ExplorationHUD {
 
+export default class ExplorationHUD {
   constructor(scene) {
     this.scene = scene;
+    this.uiObjects = [];
   }
 
   create() {
-
     const scene = this.scene;
 
-    scene.add.rectangle(
-      500, 30, 1000, 60, 0x080e1c, 0.96
+    // ==================================
+    // FIXED SIDEBAR
+    // ==================================
+
+    const sidebar = scene.add.rectangle(
+      135, 325, 270, 650,
+      0x091523, 0.98
     );
 
-    scene.add.text(
-      20, 18,
-      'ASTROQUEST | LUNAR EXPEDITION 01',
-      {
-        fontSize: '17px',
-        color: '#ffffff',
-        fontStyle: 'bold'
-      }
+    sidebar.setScrollFactor(0);
+    sidebar.setDepth(100);
+
+    this.uiObjects.push(sidebar);
+
+    const addText = (
+      x, y, value, size, color, bold = false
+    ) => {
+      const text = scene.add.text(
+        x, y, value,
+        {
+          fontFamily: 'monospace',
+          fontSize: `${size}px`,
+          color,
+          fontStyle: bold ? 'bold' : 'normal',
+          wordWrap: { width: 235 },
+          lineSpacing: 5
+        }
+      );
+
+      text.setScrollFactor(0);
+      text.setDepth(102);
+
+      this.uiObjects.push(text);
+
+      return text;
+    };
+
+    const addDivider = (y) => {
+      const line = scene.add.rectangle(
+        135, y, 230, 1,
+        0x36516a
+      );
+
+      line.setScrollFactor(0);
+      line.setDepth(102);
+
+      this.uiObjects.push(line);
+    };
+
+    // Header
+    addText(
+      16, 15,
+      'ASTROQUEST',
+      21, '#ffffff', true
     );
 
-    scene.add.text(
-      690, 18,
-      'GRAVITY: 1.62 m/s²',
-      {
-        fontSize: '15px',
-        color: '#80ceff'
-      }
+    addText(
+      16, 43,
+      'LUNAR EXPEDITION 01',
+      10, '#7dd3fc', true
     );
 
-    this.statusText = scene.add.text(
-      20, 590,
-      'STATUS: EXPLORING SUNLIT TERRAIN',
-      {
-        fontSize: '14px',
-        color: '#a8e3b3',
-        backgroundColor: '#101923',
-        padding: { x: 10, y: 8 }
-      }
+    addDivider(72);
+
+    // Mission day
+    addText(
+      16, 88,
+      'OPERATIONAL DAY',
+      11, '#91a9bf', true
     );
 
-    scene.add.text(
-      20, 625,
-      'WASD / ARROWS: MOVE  |  E: INSPECT  |  ESC: CLOSE',
-      {
-        fontSize: '12px',
-        color: '#c1cbd5'
-      }
+    this.dayText = addText(
+      16, 108,
+      'DAY 01',
+      25, '#7dd3fc', true
     );
 
-    scene.add.text(
-      700, 625,
-      'LUNAR SOUTH POLE',
-      {
-        fontSize: '12px',
-        color: '#c1cbd5'
-      }
+    this.dailyStatusText = addText(
+      16, 143,
+      'DAILY TASKS: 0 / 6',
+      13, '#8dffb0', true
     );
 
-    this.objectiveText = scene.add.text(
-      20, 78,
-      'OBJECTIVE: Inspect all eight lunar facilities',
-      {
-        fontSize: '13px',
-        color: '#ffffff',
-        backgroundColor: '#263746',
-        padding: { x: 8, y: 6 }
-      }
+    addDivider(175);
+
+    // Resources section
+    addText(
+      16, 188,
+      'BASE RESOURCE INVENTORY',
+      11, '#91a9bf', true
     );
 
-    scene.add.text(
-      20, 110,
-      'Explore the base and inspect each operational module.',
-      {
-        fontSize: '12px',
-        color: '#d1dbe4'
-      }
+    addDivider(280);
+
+    // Production choice
+    addText(
+      16, 294,
+      'PRODUCTION PRIORITY',
+      11, '#91a9bf', true
     );
 
-    this.facilityCounterText = scene.add.text(
-      770, 43,
+    this.dailyChoiceText = addText(
+      16, 316,
+      'NOT SELECTED',
+      14, '#facc15', true
+    );
+
+    this.productionHintText = addText(
+      16, 341,
+      'Choose Water Recovery or Oxygen Generation.',
+      10, '#b6c9da'
+    );
+
+    addDivider(395);
+
+    // Daily objectives
+    addText(
+      16, 409,
+      'DAILY OBJECTIVES',
+      12, '#91a9bf', true
+    );
+
+    this.objectiveText = addText(
+      16, 435,
+      '○ SOLAR - Power\n○ WRS / OGA - Production\n○ BLSM - Life Support\n○ LAB - Synthesis\n○ CREW - Medical\n○ EVA - Suit Preparation',
+      10, '#d3e1ed'
+    );
+
+    addDivider(535);
+
+    // Current status
+    addText(
+      16, 549,
+      'MISSION STATUS',
+      10, '#91a9bf', true
+    );
+
+    this.statusText = addText(
+      16, 570,
+      'EXPLORING LUNAR TERRAIN',
+      10, '#a8e3b3', true
+    );
+
+    addText(
+      16, 615,
+      'WASD / ARROWS: MOVE\nE: INSPECT  |  ESC: CLOSE',
+      9, '#8fa6ba'
+    );
+
+    // ==================================
+    // GAMEPLAY AREA INDICATORS
+    // ==================================
+
+    this.facilityCounterText = addText(
+      975, 14,
       'FACILITIES: 0 / 8',
-      {
-        fontSize: '14px',
-        color: '#7fe7ff',
-        fontStyle: 'bold'
-      }
-    ).setOrigin(1, 0);
+      12, '#7fe7ff', true
+    );
 
-    this.interactionPrompt = scene.add.text(
-      500, 555,
+    this.facilityCounterText.setOrigin(1, 0);
+
+    this.interactionPrompt = addText(
+      635, 590,
       '',
-      {
-        fontSize: '15px',
-        color: '#ffffff',
-        backgroundColor: '#102d43',
-        padding: { x: 12, y: 8 },
-        align: 'center'
-      }
-    ).setOrigin(0.5).setVisible(false);
+      14, '#ffffff', true
+    );
+
+    this.interactionPrompt
+      .setOrigin(0.5)
+      .setBackgroundColor('#102d43')
+      .setPadding(12, 8)
+      .setVisible(false);
+
+    // Fixed separator.
+    addDivider(0);
   }
 
   setStatus(message, color) {
+    if (!this.statusText) return;
+
     this.statusText.setText(message);
     this.statusText.setColor(color);
   }
@@ -114,11 +198,76 @@ export default class ExplorationHUD {
     );
   }
 
-  completeObjective() {
-    this.objectiveText.setText(
-      'OBJECTIVE COMPLETE: ALL 8 FACILITIES INSPECTED'
+  updateDailyStatus(status) {
+    if (!this.dailyStatusText) return;
+
+    this.dayText.setText(
+      `DAY ${String(status.day).padStart(2, '0')}`
     );
 
-    this.objectiveText.setColor('#8dffb0');
+    this.dailyStatusText.setText(
+      `DAILY TASKS: ${status.completedCount} / ${status.requiredCount}`
+    );
+
+    this.dailyStatusText.setColor(
+      status.canSleep ? '#8dffb0' : '#7dd3fc'
+    );
+
+    this.dailyChoiceText.setText(
+      status.productionChoiceName
+    );
+
+    this.dailyChoiceText.setColor(
+      status.productionChoice
+        ? '#8dffb0'
+        : '#facc15'
+    );
+
+    const completed = status.completedTasks || [];
+
+    const productionComplete = Boolean(
+      status.productionChoice
+    );
+
+    const objectiveLines = [
+      `${completed.includes('SOLAR') ? '✓' : '○'} SOLAR - Power`,
+      `${productionComplete ? '✓' : '○'} WRS / OGA - Production`,
+      `${completed.includes('BLSM') ? '✓' : '○'} BLSM - Life Support`,
+      `${completed.includes('LAB') ? '✓' : '○'} LAB - Synthesis`,
+      `${completed.includes('CREW') ? '✓' : '○'} CREW - Medical`,
+      `${completed.includes('EVA') ? '✓' : '○'} EVA - Suit Preparation`
+    ];
+
+    this.objectiveText.setText(
+      objectiveLines.join('\n')
+    );
+
+    this.objectiveText.setColor(
+      status.canSleep ? '#8dffb0' : '#d3e1ed'
+    );
+
+    this.productionHintText.setText(
+      status.productionChoice
+        ? `${status.productionChoiceName} selected. Other production facility locked until tomorrow.`
+        : 'Choose Water Recovery or Oxygen Generation.'
+    );
+  }
+
+  setVisible(visible) {
+    this.uiObjects.forEach(object => {
+      if (object && object.active) {
+        object.setVisible(visible);
+      }
+    });
+  }
+
+  completeObjective() {
+    if (this.objectiveText) {
+      this.objectiveText.setText(
+        'ALL FACILITIES INSPECTED'
+      );
+
+      this.objectiveText.setColor('#8dffb0');
+    }
   }
 }

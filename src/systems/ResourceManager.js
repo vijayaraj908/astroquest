@@ -1,12 +1,13 @@
+
 import { INITIAL_RESOURCES } from '../data/resourceConfig.js';
 
 export default class ResourceManager {
-
   constructor() {
     this.resources = {
       ...INITIAL_RESOURCES
     };
 
+    // Tracks facilities operated during the current day.
     this.activatedFacilities = new Set();
   }
 
@@ -17,7 +18,6 @@ export default class ResourceManager {
   }
 
   canActivate(facility) {
-
     if (!facility || !facility.operation) {
       return {
         allowed: false,
@@ -28,14 +28,13 @@ export default class ResourceManager {
     if (this.activatedFacilities.has(facility.id)) {
       return {
         allowed: false,
-        reason: 'This facility has already been activated.'
+        reason: 'This facility has already been operated today.'
       };
     }
 
     const changes = facility.operation;
 
     for (const [resource, change] of Object.entries(changes)) {
-
       const current = this.resources[resource];
 
       if (current === undefined) {
@@ -60,7 +59,6 @@ export default class ResourceManager {
   }
 
   activateFacility(facility) {
-
     const validation = this.canActivate(facility);
 
     if (!validation.allowed) {
@@ -72,19 +70,56 @@ export default class ResourceManager {
 
     const changes = facility.operation;
 
-    // Apply all resource changes.
+    // Apply all resource changes after validation.
     for (const [resource, change] of Object.entries(changes)) {
       this.resources[resource] += change;
     }
 
-    // Mark facility as activated.
     this.activatedFacilities.add(facility.id);
 
     return {
       success: true,
-      message: 'Facility activated successfully.',
+      message: 'Facility operation completed successfully.',
       changes: { ...changes },
       resources: this.getResources()
+    };
+  }
+  
+  
+  consumeResource(resource, amount) {
+    if (!Number.isFinite(amount) || amount < 0) {
+      return {
+        success: false,
+        consumed: 0,
+        shortage: 0
+      };
+    }
+
+    if (this.resources[resource] === undefined) {
+      return {
+        success: false,
+        consumed: 0,
+        shortage: amount
+      };
+    }
+
+    const available = Math.max(
+      0,
+      this.resources[resource]
+    );
+
+    const consumed = Math.min(
+      available,
+      amount
+    );
+
+    this.resources[resource] = available - consumed;
+
+    return {
+      success: true,
+      consumed,
+      shortage: amount - consumed,
+      remaining: this.resources[resource]
     };
   }
 
@@ -92,7 +127,13 @@ export default class ResourceManager {
     return this.activatedFacilities.has(facilityId);
   }
 
+  resetDailyActivations() {
+    // Preserve inventory and allow operations again tomorrow.
+    this.activatedFacilities.clear();
+  }
+
   reset() {
+    // Full game reset.
     this.resources = {
       ...INITIAL_RESOURCES
     };

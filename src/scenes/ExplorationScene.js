@@ -2,6 +2,8 @@
 import Phaser from 'phaser';
 
 import ResourceManager from '../systems/ResourceManager.js';
+import CrewSurvivalManager from '../systems/CrewSurvivalManager.js';
+import EmergencyManager from '../systems/EmergencyManager.js';
 import ResourceHUD from '../ui/ResourceHUD.js';
 import AstronautController from '../systems/AstronautController.js';
 import FacilityManager from '../systems/FacilityManager.js';
@@ -10,93 +12,123 @@ import ExplorationHUD from '../ui/ExplorationHUD.js';
 export default class ExplorationScene extends Phaser.Scene {
   constructor() {
     super('ExplorationScene');
+
+    this.WORLD_WIDTH = 1800;
+    this.WORLD_HEIGHT = 1200;
+    this.MAP_OFFSET_X = 300;
+    this.MAP_OFFSET_Y = 150;
   }
 
   create() {
-    const W = 1000;
-    const H = 650;
+    // ==================================
+    // EXPANDED LUNAR WORLD
+    // ==================================
 
-    // ==================================
-    // LUNAR ENVIRONMENT
-    // ==================================
+    this.physics.world.setBounds(
+      300, 0,
+      this.WORLD_WIDTH-300,
+      this.WORLD_HEIGHT
+    );
+
+    this.cameras.main.setBounds(
+      0, 0,
+      this.WORLD_WIDTH,
+      this.WORLD_HEIGHT
+    );
 
     this.add.rectangle(
-      0, 0, W, H, 0x171c23
+      0, 0,
+      this.WORLD_WIDTH,
+      this.WORLD_HEIGHT,
+      0x171c23
     ).setOrigin(0);
 
-    // Lunar regolith texture
-    for (let i = 0; i < 230; i++) {
-      const x = Phaser.Math.Between(0, W);
-      const y = Phaser.Math.Between(65, H);
+    // Lunar surface details.
+    for (let i = 0; i < 550; i++) {
+      const x = Phaser.Math.Between(10, this.WORLD_WIDTH - 10);
+      const y = Phaser.Math.Between(10, this.WORLD_HEIGHT - 10);
 
       this.add.circle(
-        x,
-        y,
+        x, y,
         Phaser.Math.Between(1, 3),
         0x89909a,
         Phaser.Math.FloatBetween(0.08, 0.3)
       );
     }
 
-    // Decorative small rocks (visual only)
-    for (let i = 0; i < 45; i++) {
-      const x = Phaser.Math.Between(20, 960);
-      const y = Phaser.Math.Between(100, 620);
+    // Lunar rocks.
+    for (let i = 0; i < 125; i++) {
+      const x = Phaser.Math.Between(20, this.WORLD_WIDTH - 20);
+      const y = Phaser.Math.Between(100, this.WORLD_HEIGHT - 20);
 
       this.add.ellipse(
-        x,
-        y,
-        Phaser.Math.Between(8, 22),
-        Phaser.Math.Between(5, 15),
-        0x555e69
+        x, y,
+        Phaser.Math.Between(8, 24),
+        Phaser.Math.Between(5, 16),
+        0x555e69,
+        0.85
       );
     }
 
     // ==================================
-    // SUNLIT RESEARCH OUTPOST
+    // LUNAR HABITAT
     // ==================================
 
+    const ox = this.MAP_OFFSET_X;
+    const oy = this.MAP_OFFSET_Y;
+
     this.add.ellipse(
-      170, 245, 310, 260, 0xa1a5a5, 0.12
+      170 + ox, 245 + oy,
+      310, 260,
+      0xa1a5a5, 0.12
     );
 
-    // Habitat
     this.add.rectangle(
-      150, 220, 115, 75, 0x8797a5
+      150 + ox, 220 + oy,
+      115, 75,
+      0x8797a5
     ).setStrokeStyle(3, 0xd5e1e8);
 
     this.add.rectangle(
-      150, 220, 85, 52, 0x33485b
+      150 + ox, 220 + oy,
+      85, 52,
+      0x33485b
     );
 
     this.add.text(
-      150, 168,
+      150 + ox, 168 + oy,
       'LUNAR HABITAT',
       {
-        fontSize: '13px',
+        fontSize: '15px',
         color: '#ffffff',
         fontStyle: 'bold'
       }
     ).setOrigin(0.5);
 
-    // Habitat entrance
     this.add.rectangle(
-      208, 245, 12, 28, 0x1c2937
+      208 + ox, 245 + oy,
+      12, 28,
+      0x1c2937
     );
 
-    // Solar panels
+    // ==================================
+    // SOLAR ARRAY
+    // ==================================
+
     for (let i = 0; i < 3; i++) {
-      const panelX = 100 + i * 75;
+      const panelX = 100 + i * 75 + ox;
 
       const panel = this.add.rectangle(
-        panelX, 340, 57, 32, 0x164d79
+        panelX, 340 + oy,
+        57, 32,
+        0x164d79
       );
 
       panel.setStrokeStyle(2, 0x7ab9e8);
 
       for (let j = 0; j < 3; j++) {
         this.add.line(
-          panelX, 340,
+          panelX, 340 + oy,
           -20 + j * 20, -15,
           -20 + j * 20, 15,
           0x9dc9e8
@@ -105,10 +137,10 @@ export default class ExplorationScene extends Phaser.Scene {
     }
 
     this.add.text(
-      175, 380,
+      175 + ox, 380 + oy,
       'SOLAR ARRAY',
       {
-        fontSize: '12px',
+        fontSize: '13px',
         color: '#ffffff'
       }
     ).setOrigin(0.5);
@@ -118,19 +150,25 @@ export default class ExplorationScene extends Phaser.Scene {
     // ==================================
 
     this.add.ellipse(
-      790, 385, 350, 300, 0x858b91
+      790 + ox, 385 + oy,
+      350, 300,
+      0x858b91
     );
 
     this.add.ellipse(
-      790, 385, 290, 240, 0x101722
+      790 + ox, 385 + oy,
+      290, 240,
+      0x101722
     );
 
     this.add.ellipse(
-      790, 385, 210, 170, 0x070b12
+      790 + ox, 385 + oy,
+      210, 170,
+      0x070b12
     );
 
     this.add.text(
-      790, 365,
+      790 + ox, 365 + oy,
       'PERMANENTLY SHADOWED\nREGION',
       {
         fontSize: '15px',
@@ -141,7 +179,7 @@ export default class ExplorationScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     this.add.text(
-      790, 420,
+      790 + ox, 420 + oy,
       'WATER ICE RESEARCH ZONE',
       {
         fontSize: '11px',
@@ -150,7 +188,7 @@ export default class ExplorationScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     this.add.text(
-      790, 235,
+      790 + ox, 235 + oy,
       '⚠ EXTREME COLD',
       {
         fontSize: '14px',
@@ -163,26 +201,33 @@ export default class ExplorationScene extends Phaser.Scene {
     // CREATE GAME SYSTEMS
     // ==================================
 
-    // 1. Astronaut movement and collisions
     this.astronaut = new AstronautController(this);
     this.astronaut.create();
 
-    // 2. Exploration HUD
     this.hud = new ExplorationHUD(this);
     this.hud.create();
 
-    // 3. Resource management
     this.resourceManager = new ResourceManager();
 
-    // 4. Resource dashboard
+    // Initialize crew survival.
+    this.crewSurvivalManager = new CrewSurvivalManager(
+      this.resourceManager
+    );
+
+    // Initialize emergency management.
+    this.emergencyManager = new EmergencyManager(
+      this.resourceManager,
+      this.crewSurvivalManager
+    );
+
     this.resourceHUD = new ResourceHUD(
       this,
-      this.resourceManager
+      this.resourceManager,
+      this.crewSurvivalManager
     );
 
     this.resourceHUD.create();
 
-    // 5. Facility management
     this.facilityManager = new FacilityManager(
       this,
       this.resourceManager,
@@ -190,34 +235,103 @@ export default class ExplorationScene extends Phaser.Scene {
     );
 
     this.facilityManager.create();
-  } // End of create()
 
+    // ==================================
+    // CAMERA FOLLOW
+    // ==================================
+
+    this.cameras.main.startFollow(
+      this.astronaut.playerBody,
+      true,
+      0.09,
+      0.09
+    );
+
+    // Initial camera position.
+    this.cameras.main.centerOn(
+      this.astronaut.playerBody.x,
+      this.astronaut.playerBody.y
+    );
+
+    // ==================================
+    // MAP AND SIDEBAR SEPARATION
+    // ==================================
+
+    this.add.rectangle(
+      270, 325, 4, 650,
+      0x3d607b
+    )
+      .setScrollFactor(0)
+      .setDepth(90);
+  }
+
+  // Hide fixed interface while a facility console
+  // or mini-game is being displayed.
+  beginFacilityConsole() {
+  this.cameras.main.stopFollow();
+
+  // Preserve the current camera position.
+  this.hud.setVisible(false);
+  this.resourceHUD.setVisible(false);
+}
+
+  // Restore the exploration interface and camera.
+  endFacilityConsole() {
+  this.hud.setVisible(true);
+  this.resourceHUD.setVisible(true);
+
+  this.cameras.main.startFollow(
+    this.astronaut.playerBody,
+    true,
+    0.09,
+    0.09
+  );
+}
+
+ 
   update() {
     if (!this.astronaut || !this.astronaut.playerBody) {
       return;
     }
 
-    // ESC closes the facility console
-    if (
-      this.facilityManager.isOpen &&
-      Phaser.Input.Keyboard.JustDown(
-        this.astronaut.escapeKey
-      )
-    ) {
-      this.facilityManager.close();
+    // PRIORITY 1:
+    // If a mini-game is running, ESC cancels
+    // the mini-game only. The facility panel stays open.
+    if (this.facilityManager.miniGameManager.isRunning()) {
+      this.astronaut.playerBody.body.setVelocity(0, 0);
+
+      if (
+        Phaser.Input.Keyboard.JustDown(
+          this.astronaut.escapeKey
+        )
+      ) {
+        this.facilityManager.miniGameManager.cancelActive();
+      }
+
       return;
     }
 
-    // Freeze astronaut while console is open
+    // PRIORITY 2:
+    // If only the facility console is open,
+    // ESC closes the facility console.
     if (this.facilityManager.isOpen) {
       this.astronaut.playerBody.body.setVelocity(0, 0);
+
+      if (
+        Phaser.Input.Keyboard.JustDown(
+          this.astronaut.escapeKey
+        )
+      ) {
+        this.facilityManager.close();
+      }
+
       return;
     }
 
-    // Update movement and shadowed-region status
+    // PRIORITY 3:
+    // Normal lunar exploration.
     this.astronaut.update();
-
-    // Update facility proximity and interaction
     this.facilityManager.update();
   }
+
 }

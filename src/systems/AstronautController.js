@@ -1,3 +1,4 @@
+
 import Phaser from 'phaser';
 
 export default class AstronautController {
@@ -9,7 +10,13 @@ export default class AstronautController {
   create() {
     const scene = this.scene;
 
-    // Generate reusable rock texture.
+    const ox = scene.MAP_OFFSET_X;
+    const oy = scene.MAP_OFFSET_Y;
+
+    // ==================================
+    // ROCK TEXTURE
+    // ==================================
+
     const rockGraphics = scene.make.graphics({
       x: 0,
       y: 0,
@@ -22,10 +29,18 @@ export default class AstronautController {
     rockGraphics.lineStyle(2, 0x69727d, 1);
     rockGraphics.strokeEllipse(22, 16, 42, 30);
 
-    rockGraphics.generateTexture('astroquestRock', 44, 32);
+    rockGraphics.generateTexture(
+      'astroquestRock',
+      44,
+      32
+    );
+
     rockGraphics.destroy();
 
-    // Static rock obstacles.
+    // ==================================
+    // ROCK COLLISIONS
+    // ==================================
+
     this.obstacles = scene.physics.add.staticGroup();
 
     const obstaclePositions = [
@@ -34,12 +49,20 @@ export default class AstronautController {
       [340, 455],
       [540, 160],
       [585, 495],
-      [470, 555]
+      [470, 555],
+      [900, 650],
+      [1050, 300],
+      [1200, 800],
+      [1450, 500],
+      [1500, 950],
+      [800, 1050]
     ];
 
     obstaclePositions.forEach(([x, y]) => {
       const rock = this.obstacles.create(
-        x, y, 'astroquestRock'
+        x + ox,
+        y + oy,
+        'astroquestRock'
       );
 
       rock.setDisplaySize(44, 32);
@@ -47,38 +70,65 @@ export default class AstronautController {
       rock.refreshBody();
     });
 
-    // Astronaut visual.
+    // ==================================
+    // ASTRONAUT VISUAL
+    // ==================================
+
     const astronautBody = scene.add.circle(
-      0, 0, 17, 0xe5e9ed
+      0, 0, 17,
+      0xe5e9ed
     );
 
-    astronautBody.setStrokeStyle(3, 0x5d758a);
+    astronautBody.setStrokeStyle(
+      3, 0x5d758a
+    );
 
     const helmet = scene.add.circle(
-      0, -9, 9, 0x64b6e9
+      0, -9, 9,
+      0x64b6e9
     );
 
-    helmet.setStrokeStyle(2, 0xffffff);
+    helmet.setStrokeStyle(
+      2, 0xffffff
+    );
 
     const backpack = scene.add.rectangle(
-      -16, 6, 9, 16, 0xb4a77d
+      -16, 6, 9, 16,
+      0xb4a77d
     );
 
     this.player = scene.add.container(
-      275, 275,
+      275 + ox,
+      275 + oy,
       [backpack, astronautBody, helmet]
     );
 
-    // Invisible physics body.
+    // ==================================
+    // PHYSICS BODY
+    // ==================================
+
     this.playerBody = scene.add.circle(
-      275, 275, 12, 0xffffff, 0
+      275 + ox,
+      275 + oy,
+      12,
+      0xffffff,
+      0
     );
 
     scene.physics.add.existing(this.playerBody);
 
     this.playerBody.body.setCircle(12);
+
     this.playerBody.body.setCollideWorldBounds(true);
-    this.playerBody.body.setMaxVelocity(130, 130);
+
+    this.playerBody.body.setBoundsRectangle(
+      scene.physics.world.bounds
+    );
+
+    this.playerBody.body.setMaxVelocity(
+      this.speed,
+      this.speed
+    );
 
     this.playerBody.setVisible(false);
 
@@ -87,7 +137,10 @@ export default class AstronautController {
       this.obstacles
     );
 
-    // Keyboard controls.
+    // ==================================
+    // KEYBOARD CONTROLS
+    // ==================================
+
     this.keys = scene.input.keyboard.addKeys({
       up: 'W',
       down: 'S',
@@ -116,23 +169,34 @@ export default class AstronautController {
     let vx = 0;
     let vy = 0;
 
-    if (this.keys.left.isDown || this.cursors.left.isDown) {
+    if (
+      this.keys.left.isDown ||
+      this.cursors.left.isDown
+    ) {
       vx = -1;
     }
 
-    if (this.keys.right.isDown || this.cursors.right.isDown) {
+    if (
+      this.keys.right.isDown ||
+      this.cursors.right.isDown
+    ) {
       vx = 1;
     }
 
-    if (this.keys.up.isDown || this.cursors.up.isDown) {
+    if (
+      this.keys.up.isDown ||
+      this.cursors.up.isDown
+    ) {
       vy = -1;
     }
 
-    if (this.keys.down.isDown || this.cursors.down.isDown) {
+    if (
+      this.keys.down.isDown ||
+      this.cursors.down.isDown
+    ) {
       vy = 1;
     }
 
-    // Normalize diagonal movement.
     const direction = new Phaser.Math.Vector2(vx, vy);
 
     if (direction.length() > 0) {
@@ -144,29 +208,36 @@ export default class AstronautController {
       direction.y * this.speed
     );
 
-    // Keep astronaut visual aligned with physics body.
+    // Synchronize astronaut visual.
     this.player.setPosition(
       this.playerBody.x,
       this.playerBody.y
     );
 
-    // Shadowed region detection.
+    // ==================================
+    // SHADOWED REGION DETECTION
+    // ==================================
+
     const x = this.playerBody.x;
     const y = this.playerBody.y;
 
-    const dx = (x - 790) / 145;
-    const dy = (y - 385) / 120;
+    const craterX = 790 + scene.MAP_OFFSET_X;
+    const craterY = 385 + scene.MAP_OFFSET_Y;
 
-    const insideCrater = (dx * dx) + (dy * dy) < 1;
+    const dx = (x - craterX) / 145;
+    const dy = (y - craterY) / 120;
+
+    const insideCrater =
+      (dx * dx) + (dy * dy) < 1;
 
     if (insideCrater) {
       scene.hud.setStatus(
-        'WARNING: ENTERING SHADOWED REGION | EXTREME COLD',
+        'WARNING: SHADOWED REGION | EXTREME COLD',
         '#ffad62'
       );
     } else {
       scene.hud.setStatus(
-        'STATUS: EXPLORING SUNLIT TERRAIN',
+        'STATUS: EXPLORING LUNAR TERRAIN',
         '#a8e3b3'
       );
     }

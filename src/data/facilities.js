@@ -1,3 +1,4 @@
+
 export const FACILITY_DATA = [
   {
     id: 'LCC',
@@ -32,11 +33,11 @@ export const FACILITY_DATA = [
     y: 120,
     color: 0x4fc3f7,
     purpose: 'Recovers humidity condensate, greywater and physiological waste to produce potable water.',
-    resources: '-2 kW power | +10 L water.',
+    resources: '-2 kW power | +36 L water.',
     task: 'Operate pressure valves and stabilize centrifuge RPM.',
     operation: {
       electricity: -2,
-      water: 10
+      water: 36
     }
   },
 
@@ -47,11 +48,11 @@ export const FACILITY_DATA = [
     y: 100,
     color: 0x66e0cc,
     purpose: 'Generates breathable oxygen using an electrolysis system.',
-    resources: '-3 kW power | +12 oxygen units.',
+    resources: '-3 kW power | +28 oxygen units.',
     task: 'Stabilize electrolysis waveforms and operate gas release valves.',
     operation: {
       electricity: -3,
-      oxygen: 12
+      oxygen: 28
     }
   },
 
@@ -95,12 +96,13 @@ export const FACILITY_DATA = [
     y: 520,
     color: 0x80e09c,
     purpose: 'Maintains aeroponic crops and algae photobioreactors for biological life support.',
-    resources: '-8 kW | -6 L water | -2 oxygen units.',
+    resources: '-8 kW | -6 L water | -2 oxygen units | +4 food units.',
     task: 'Balance nutrient conductivity and atmospheric CO2 scrubbing.',
     operation: {
       electricity: -8,
       water: -6,
-      oxygen: -2
+      oxygen: -2,
+      food: 4
     }
   },
 
